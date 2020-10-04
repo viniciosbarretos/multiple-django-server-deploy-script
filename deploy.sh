@@ -40,37 +40,16 @@ wsgi=$( echo ${wsgi_dir#"$current_dir/"} | tr "/" "." )
 sock_path="$current_dir/$site_name.sock"
 venv_path="$current_dir/venv"
 
-# Check python version
-python_version=$(python3.8 --version 2>&1 | grep -Po '(?<=Python )(.+)')
-if [[ "$python_version" < "3.7.0" ]]; then
-    python_version=$(python3.7 --version 2>&1 | grep -Po '(?<=Python )(.+)')
-    if [[ "$python_version" < "3.7.0" ]]; then
-        echo "Missing python version at least 3.7 Check the command 'python3 --version'"
-        exit
-    else
-        python="python3.7"
-    fi
-else
-    python="python3.8"
-fi
 
-# Check pip version
-pip_version=$(pip3 --version 2>&1 | tail -1 | grep -Po '(?<=pip )(.+)' | cut -f1 -d" ")
-if [[ "$pip_version" < "19.0.0" ]]; then
-    echo "Missing pip version at least 19.0.0 Check the command 'pip3 --version'"
-    exit
-else
-    pip="pip3"
-fi
 
 # Enter user mode
 sudo -i -u $user_name /bin/sh << EOF
 
 # Create virtual environment and install requirements
-$python -m venv $venv_path
+# $python -m venv $venv_path
 source $venv_path/bin/activate
-$pip install -r $current_dir/requirements.txt
-$pip install gunicorn
+# $pip install -r $current_dir/requirements.txt
+# $pip install gunicorn
 
 # Collect static data and migrate the database (just in case)
 $python $current_dir/manage.py collectstatic
@@ -109,11 +88,11 @@ WantedBy=multi-user.target
 EOF
 
 # Start and enable gunicorn socket and service
-systemctl daemon-reload
 systemctl start $site_name.gunicorn.socket
 systemctl enable $site_name.gunicorn.socket
 systemctl start $site_name.gunicorn.service
 systemctl enable $site_name.gunicorn.socket
+systemctl daemon-reload
 
 # Generate nginx config file
 cat > /etc/nginx/sites-available/$site_name <<EOF
